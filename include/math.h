@@ -32,4 +32,11 @@
 #endif
 
 // 函数声明
-API int add(int a, int b);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+  API int add(int a, int b);
+#ifdef __cplusplus
+}
+#endif

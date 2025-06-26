@@ -1,0 +1,108 @@
+# ----------------------------------------
+# 编译输出
+# ----------------------------------------
+*.o
+*.obj
+*.lo
+*.slo
+*.ko
+*.a
+*.lib
+*.la
+*.dll
+*.so
+*.so.*
+*.dylib
+*.exe
+*.out
+*.app
+*.i
+*.ii
+*.gch
+
+# CMake / Make
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+makefile
+build/
+bin/
+lib/
+
+# 自动生成的依赖文件
+*.dep
+*.d
+
+# ----------------------------------------
+# 日志 / 临时文件
+# ----------------------------------------
+*.log
+*.tmp
+*.swp
+*.bak
+*.orig
+*.rej
+*.swo
+*.cache
+*~
+
+# ----------------------------------------
+# IDE / 编辑器
+# ----------------------------------------
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# JetBrains CLion / Rider
+.idea/
+cmake-build-*/
+
+# Visual Studio
+*.vcxproj*
+*.sln
+*.user
+*.filters
+*.ncb
+*.opensdf
+*.sdf
+*.ipch
+*.db
+*.VC.db
+*.exe.embed.manifest
+*.tlog/
+*.lastbuildstate
+
+# Xcode
+*.xcworkspace
+*.xcodeproj
+*.xcuserstate
+*.xcuserdata/
+*.pbxuser
+
+# Eclipse
+.cproject
+.project
+.settings/
+
+# Sublime
+*.sublime-project
+*.sublime-workspace
+
+# ----------------------------------------
+# 系统平台文件
+# ----------------------------------------
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~

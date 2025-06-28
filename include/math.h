@@ -36,7 +36,21 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+  
   API int add(int a, int b);
+
+// RSA加密
+// plaintext: 明文输入，plaintext_len: 明文长度
+// pubkey_pem: 公钥PEM字符串，ciphertext: 输出密文，返回密文长度，失败返回-1
+API int rsa_encrypt(const char* plaintext, int plaintext_len, const char* pubkey_pem, unsigned char* ciphertext, int ciphertext_bufsize);
+
+// RSA解密
+// ciphertext: 密文输入，ciphertext_len: 密文长度
+// prikey_pem: 私钥PEM字符串，plaintext: 输出明文，返回明文长度，失败返回-1
+API int rsa_decrypt(const unsigned char* ciphertext, int ciphertext_len, const char* prikey_pem, char* plaintext, int plaintext_bufsize);
+
+
+
 #ifdef __cplusplus
 }
 #endif

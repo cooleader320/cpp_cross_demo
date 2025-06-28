@@ -77,3 +77,40 @@ else
 	@-rm -f *.o *.a *.lib *.so *.dll $(TARGET)
 	@-rm -f src/*.o build/static/*.o build/dll/*.o build/static/*.a build/dll/*.so
 endif
+
+install:
+ifeq ($(OS),Windows_NT)
+	@echo Installing to C:\Program Files\YourApp ...
+	@if not exist "C:\Program Files\YourApp" mkdir "C:\Program Files\YourApp"
+	@copy /Y $(TARGET)$(EXT) "C:\Program Files\YourApp\"
+	@if exist $(STATIC_LIB) copy /Y $(STATIC_LIB) "C:\Program Files\YourApp\"
+	@if exist $(DLL) copy /Y $(DLL) "C:\Program Files\YourApp\"
+else
+	@echo Installing to /usr/local/bin and /usr/local/lib ...
+	@cp -f $(TARGET) /usr/local/bin/ 2>/dev/null || true
+	@if [ -f $(STATIC_LIB) ]; then cp -f $(STATIC_LIB) /usr/local/lib/; fi
+	@if [ -f $(DLL) ]; then cp -f $(DLL) /usr/local/lib/; fi
+endif
+
+uninstall:
+ifeq ($(OS),Windows_NT)
+	@echo Uninstalling from C:\Program Files\YourApp ...
+	@del /F /Q "C:\Program Files\YourApp\$(TARGET)$(EXT)" 2>nul
+	@del /F /Q "C:\Program Files\YourApp\math.lib" 2>nul
+	@del /F /Q "C:\Program Files\YourApp\math.dll" 2>nul
+else
+	@echo Uninstalling from /usr/local/bin and /usr/local/lib ...
+	@rm -f /usr/local/bin/$(TARGET) /usr/local/lib/libmath.a /usr/local/lib/libmath.so
+endif
+
+help:
+	@echo "Available targets:"
+	@echo "  all         : Build static lib, shared lib, and main program"
+	@echo "  static      : Build static library"
+	@echo "  shared      : Build shared library"
+	@echo "  run         : Link and run main program (static lib)"
+	@echo "  run-shared  : Link and run main program (shared lib)"
+	@echo "  clean       : Clean all build files and outputs"
+	@echo "  install     : Install program and libs to system directory"
+	@echo "  uninstall   : Uninstall program and libs"
+	@echo "  help        : Show this help message"

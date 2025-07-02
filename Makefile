@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -Wall -std=c++17 -Iinclude $(JNI_INCLUDE)
+CXXFLAGS = -Wall -std=c++17 -Iinclude $(JNI_INCLUDE) -Wno-deprecated-declarations
 
 SRCS = main.cpp
 LIBSRC = $(wildcard src/*.cpp)
@@ -18,6 +18,10 @@ ifeq ($(OS),Windows_NT)
     JAVA_HOME = D:/software/Java/jdk21
     JNI_INCLUDE = -I"$(JAVA_HOME)/include" -I"$(JAVA_HOME)/include/win32"
     SHARED_FLAGS = -shared
+    OPENSSL_DIR = D:/software/DevTools/msys64/mingw64
+    OPENSSL_INC = -I$(OPENSSL_DIR)/include
+    OPENSSL_LIB = -L$(OPENSSL_DIR)/lib
+    INSTALL_DIR = D:/Program Files/YourApp
 else
     STATIC_LIB = build/static/libmath.a
     DLL = build/dll/libmath.so
@@ -27,7 +31,16 @@ else
     JAVA_HOME = /usr/lib/jvm/java-21-openjdk-amd64
     JNI_INCLUDE = -I"$(JAVA_HOME)/include" -I"$(JAVA_HOME)/include/linux"
     SHARED_FLAGS = -fPIC -shared
+    OPENSSL_INC = -I/usr/include
+    OPENSSL_LIB = -L/usr/lib/x86_64-linux-gnu
+    PREFIX ?= /usr/local
 endif
+#需要链接的 OpenSSL 库 ,告诉链接器要链接 libssl 和 libcrypto
+# OPENSSL_LIBS = -lssl -lcrypto
+OPENSSL_LIBS = -lcrypto
+
+# 更新 CXXFLAGS，自动包含 OpenSSL 头文件
+CXXFLAGS += $(OPENSSL_INC)
 
 all: static shared run
 
@@ -38,7 +51,7 @@ prepare_dirs:
 main.o: main.cpp
 	$(CXX) $(CXXFLAGS) -DBUILD_STATIC -c $< -o $@
 
-# 静态库和主程序用的 .o 文件
+# 静态库和主程序用的 .o 文件 ,-c $<：只编译，不链接，$< 是源文件 ,-o $@：输出目标文件
 build/static/%.o: src/%.cpp | prepare_dirs
 	$(CXX) $(CXXFLAGS) -DBUILD_STATIC -c $< -o $@
 
@@ -46,23 +59,23 @@ build/static/%.o: src/%.cpp | prepare_dirs
 build/dll/%.o: src/%.cpp | prepare_dirs
 	$(CXX) $(CXXFLAGS) -DBUILD_DLL -c $< -o $@
 
-# 构建静态库 .a 或 .lib
+# ar：静态库打包工具 ,rcs：参数，分别表示 replace、create、index ,$(STATIC_LIB)：输出的静态库文件名（Windows 下是 .lib，Linux 下是 .a） ,$(STATIC_OBJ)：所有要打包进库的 .o 文件
 static: $(STATIC_OBJ)
 	ar rcs $(STATIC_LIB) $(STATIC_OBJ)
 
 # 构建动态库（DLL / SO）
 shared: $(DLL_OBJ)
-	$(CXX) $(CXXFLAGS) $(SHARED_FLAGS) -o $(DLL) $(DLL_OBJ)
+	$(CXX) $(CXXFLAGS) $(SHARED_FLAGS) $(OPENSSL_LIB) -o $(DLL) $(DLL_OBJ) $(OPENSSL_LIBS)
 
 # 链接主程序（使用静态库） 然后运行程序
 run: $(MAIN_OBJ) static
-	$(CXX) $(CXXFLAGS) -o $(TARGET)$(EXT) main.o $(STATIC_LIB)
+	$(CXX) $(CXXFLAGS) $(OPENSSL_LIB) -o $(TARGET)$(EXT) main.o $(STATIC_LIB) $(OPENSSL_LIBS)
 	@echo "+++++++Running(static lib) $(TARGET)$(EXT)..."
 	@$(RUN_CMD)
 
 # 这里使用的是 -lmath，链接 libmath.so 或 math.dll
 run-shared: $(MAIN_OBJ) shared
-	$(CXX) $(CXXFLAGS) -o $(TARGET)$(EXT) main.o -Lbuild/dll -lmath
+	$(CXX) $(CXXFLAGS) $(OPENSSL_LIB) -o $(TARGET)$(EXT) main.o -Lbuild/dll -lmath $(OPENSSL_LIBS)
 	@echo "+++++++Running (dynamic lib) $(TARGET)$(EXT) with shared lib..."
 ifeq ($(OS),Windows_NT)
 	@copy /Y build\dll\math.dll .
@@ -71,36 +84,37 @@ endif
 
 clean:
 ifeq ($(OS),Windows_NT)
-	@-del /F /Q *.o *.a *.lib *.so *.dll $(TARGET).exe
+	@-del /F /Q *.o *.a *.lib *.so *.dll $(TARGET) $(TARGET).exe
 	@-del /F /Q src\*.o  build\static\*.o build\dll\*.o build\static\*.lib build\dll\*.dll
 else
-	@-rm -f *.o *.a *.lib *.so *.dll $(TARGET)
+	@-rm -f *.o *.a *.lib *.so *.dll $(TARGET) $(TARGET).exe
 	@-rm -f src/*.o build/static/*.o build/dll/*.o build/static/*.a build/dll/*.so
 endif
 
 install:
 ifeq ($(OS),Windows_NT)
-	@echo Installing to C:\Program Files\YourApp ...
-	@if not exist "C:\Program Files\YourApp" mkdir "C:\Program Files\YourApp"
-	@copy /Y $(TARGET)$(EXT) "C:\Program Files\YourApp\"
-	@if exist $(STATIC_LIB) copy /Y $(STATIC_LIB) "C:\Program Files\YourApp\"
-	@if exist $(DLL) copy /Y $(DLL) "C:\Program Files\YourApp\"
+	@echo Installing to $(INSTALL_DIR) ...
+	@if not exist "$(INSTALL_DIR)" mkdir "$(INSTALL_DIR)"
+	@copy /Y $(TARGET)$(EXT) "$(INSTALL_DIR)\"
+	@if exist "$(DLL)" echo "DLL exists"
+	@if exist "$(DLL)" xcopy /Y "$(DLL)" "$(INSTALL_DIR)\"
+
 else
-	@echo Installing to /usr/local/bin and /usr/local/lib ...
-	@cp -f $(TARGET) /usr/local/bin/ 2>/dev/null || true
-	@if [ -f $(STATIC_LIB) ]; then cp -f $(STATIC_LIB) /usr/local/lib/; fi
-	@if [ -f $(DLL) ]; then cp -f $(DLL) /usr/local/lib/; fi
+	@echo Installing to $(PREFIX)/bin and $(PREFIX)/lib ...
+	@cp -f $(TARGET) $(PREFIX)/bin/ 2>/dev/null || true
+	@if [ -f $(STATIC_LIB) ]; then cp -f $(STATIC_LIB) $(PREFIX)/lib/; fi
+	@if [ -f $(DLL) ]; then cp -f $(DLL) $(PREFIX)/lib/; fi
 endif
 
 uninstall:
 ifeq ($(OS),Windows_NT)
-	@echo Uninstalling from C:\Program Files\YourApp ...
-	@del /F /Q "C:\Program Files\YourApp\$(TARGET)$(EXT)" 2>nul
-	@del /F /Q "C:\Program Files\YourApp\math.lib" 2>nul
-	@del /F /Q "C:\Program Files\YourApp\math.dll" 2>nul
+	@echo Uninstalling from $(INSTALL_DIR) ...
+	@del /F /Q "$(INSTALL_DIR)\$(TARGET)$(EXT)" 2>nul
+	@del /F /Q "$(INSTALL_DIR)\math.lib" 2>nul
+	@del /F /Q "$(INSTALL_DIR)\math.dll" 2>nul
 else
-	@echo Uninstalling from /usr/local/bin and /usr/local/lib ...
-	@rm -f /usr/local/bin/$(TARGET) /usr/local/lib/libmath.a /usr/local/lib/libmath.so
+	@echo Uninstalling from $(PREFIX)/bin and $(PREFIX)/lib ...
+	@rm -f $(PREFIX)/bin/$(TARGET) $(PREFIX)/lib/libmath.a $(PREFIX)/lib/libmath.so
 endif
 
 help:

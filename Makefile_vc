@@ -1,0 +1,94 @@
+# Visual C++ nmake Makefile
+
+!IFNDEF JAVA_HOME
+JAVA_HOME = D:\software\Java\jdk21
+!ENDIF
+
+!IFNDEF OPENSSL_DIR
+OPENSSL_DIR = D:\software\DevTools\openssl-vc
+!ENDIF
+
+INCLUDE_DIRS = /Iinclude /I"$(JAVA_HOME)\include" /I"$(JAVA_HOME)\include\win32" /I"$(OPENSSL_DIR)\include"
+LIB_DIRS = /LIBPATH:"$(OPENSSL_DIR)\lib"
+OPENSSL_LIBS = libcrypto.lib
+
+CXX = cl
+CXXFLAGS = /nologo /EHsc /W3 /std:c++17 $(INCLUDE_DIRS) /D_CRT_SECURE_NO_WARNINGS
+LDFLAGS = $(LIB_DIRS) $(OPENSSL_LIBS)
+
+TARGET = app.exe
+STATIC_LIB = build\static\math.lib
+DLL = build\dll\math.dll
+
+# 手动列出所有源文件
+LIBSRC = src\math.cpp src\other.cpp
+STATIC_OBJ = build\static\math.obj build\static\other.obj
+DLL_OBJ = build\dll\math.obj build\dll\other.obj
+
+all: prepare_dirs static shared run
+
+prepare_dirs:
+    if not exist build\static mkdir build\static
+    if not exist build\dll mkdir build\dll
+
+main.obj: main.cpp
+    $(CXX) $(CXXFLAGS) /DBUILD_STATIC /c main.cpp /Fo$@
+
+build\static\math.obj: src\math.cpp
+    $(CXX) $(CXXFLAGS) /DBUILD_STATIC /c src\math.cpp /Fo$@
+
+build\static\other.obj: src\other.cpp
+    $(CXX) $(CXXFLAGS) /DBUILD_STATIC /c src\other.cpp /Fo$@
+
+build\dll\math.obj: src\math.cpp
+    $(CXX) $(CXXFLAGS) /DBUILD_DLL /c src\math.cpp /Fo$@
+
+build\dll\other.obj: src\other.cpp
+    $(CXX) $(CXXFLAGS) /DBUILD_DLL /c src\other.cpp /Fo$@
+
+static: $(STATIC_OBJ)
+    lib /nologo /OUT:$(STATIC_LIB) $(STATIC_OBJ)
+
+shared: $(DLL_OBJ)
+    cl /LD /Fe$(DLL) $(DLL_OBJ) $(LDFLAGS)
+
+run: main.obj static
+    cl $(CXXFLAGS) main.obj $(STATIC_LIB) $(LDFLAGS) /Fe$(TARGET)
+    @echo Running $(TARGET)...
+    $(TARGET)
+
+run-shared: main.obj shared
+    cl $(CXXFLAGS) main.obj /link /LIBPATH:build\dll math.lib $(LDFLAGS) /Fe$(TARGET)
+    @echo Running (shared) $(TARGET)...
+    $(TARGET)
+
+clean:
+    -del /F /Q *.obj *.lib *.dll *.exe
+    -del /F /Q build\static\*.obj build\dll\*.obj build\static\*.lib build\dll\*.dll
+
+install:
+    @if not exist "D:\Program Files\YourApp" mkdir "D:\Program Files\YourApp"
+    copy /Y $(TARGET) "D:\Program Files\YourApp\"
+    if exist $(DLL) copy /Y $(DLL) "D:\Program Files\YourApp\"
+
+uninstall:
+    -del /F /Q "D:\Program Files\YourApp\$(TARGET)"
+    -del /F /Q "D:\Program Files\YourApp\math.lib"
+    -del /F /Q "D:\Program Files\YourApp\math.dll"
+
+help:
+    @echo Targets:
+    @echo   all         : Build static lib, shared lib, and main program
+    @echo   static      : Build static library
+    @echo   shared      : Build shared library (DLL)
+    @echo   run         : Link and run main program (static lib)
+    @echo   run-shared  : Link and run main program (shared lib)
+    @echo   clean       : Clean all build files and outputs
+    @echo   install     : Install program and libs to system directory
+    @echo   uninstall   : Uninstall program and libs
+    @echo   help        : Show this help message
+
+# 说明:
+# 1. 你需要下载并解压 OpenSSL for Windows（VC 版本），将 include 和 lib 目录路径填入 OPENSSL_DIR。
+# 2. JAVA_HOME 指向你的 JDK 安装目录。
+# 3. 只支持 Windows MSVC 环境，需在“开发者命令提示符”下运行 nmake。

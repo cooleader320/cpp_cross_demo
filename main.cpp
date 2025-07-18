@@ -3,6 +3,7 @@
 
 #include "math.h"
 
+// #include "parse_uid.h"
 int main() {
     std::cout << "2 + 3 = " << add(2, 3) << std::endl;
 
@@ -47,6 +48,11 @@ YI3WJQR6F0xUXV0BAkARvAkWeI8sgeqCg/1M+Q8Hq7QT2vzrR8Ja/HYfQJNNVzVQ
         std::cout << "rsa_decrypt failed" << std::endl;
     }
     // ===== RSA 加解密测试结束 =====
+
+    // // parse uid test
+    // std::string cToken = "R9E5ponWRiYFr2vOQoyRBwZJoxJ-CKoVJFBvs00klmZTezT8phS6AADU0HbUGI74mH_rouzEBIE0wygEkatRiz8S_A23q6ICLbdTs6S953PJaPK-oA47pR8XX78LCUPpBIC5hVbetZf1R8b-tGK5nZhYK1zJd47-4ku1Yta8p74";
+    // std::string uid = parse_uid(cToken);
+    // std::cout << "uid: " << uid << std::endl;
 
     return 0;
 }

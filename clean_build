@@ -1,0 +1,16 @@
+#!/bin/bash
+# 切换到脚本所在目录
+cd "$(dirname "$0")"
+
+if [ -d build ]; then
+    echo "正在删除 build 目录..."
+    # rm -rf build
+    rm -rf build/*
+    rm -rf build/.??*
+
+fi
+if [ ! -d build ]; then
+    echo "build 目录不存在，正在新建..."
+    mkdir -p build
+fi
+echo "已新建空的 build 目录。"

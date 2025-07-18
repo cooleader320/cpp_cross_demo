@@ -4,7 +4,13 @@ project(cpp_cross_demo LANGUAGES CXX)
 # 设置 C++ 标准
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g -O0 -Wno-deprecated-declarations")
+if(MSVC)
+    # MSVC 的警告抑制参数（如有需要可加）
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3 /source-charset:utf-8 /execution-charset:utf-8")
+else()
+    # GCC/Clang 的警告抑制参数
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g -O0 -Wno-deprecated-declarations")
+endif()
 
 # 包含头文件目录
 include_directories(${CMAKE_SOURCE_DIR}/include)
@@ -33,7 +39,7 @@ endif()
 # 你可以根据实际情况修改 OPENSSL_ROOT_DIR
 if(MSVC)
     # MSVC (Visual Studio) 下，需使用官方预编译或自编译的 OpenSSL
-    set(OPENSSL_ROOT_DIR "C:/local/openssl") # 请根据实际路径修改
+    set(OPENSSL_ROOT_DIR "D:/software/DevTools/libs/OpenSSL-Win64") # 请根据实际路径修改
     include_directories("${OPENSSL_ROOT_DIR}/include")
     link_directories("${OPENSSL_ROOT_DIR}/lib")
     set(OPENSSL_CRYPTO_LIB "libcrypto.lib")
@@ -175,8 +181,10 @@ install(TARGETS app_static app_shared math_static math_shared
 #    cmake --build .
 # 5. 你可以在 CMake GUI 或命令行中手动指定 -DOPENSSL_ROOT_DIR=... -DJAVA_HOME=... 
 # ===================== 可用 CMake Target 及说明 =====================
-# 你可以使用如下命令（在 build 目录下）来执行对应目标：
+# 你可以使用如下命令（在 build 目录下）来执行对应目标：(如果是 build 当前目录， . 换成 ..)
 #
+# 0.  cpp_cross_demo\build > cmake ..     # 用上一级目录（源码目录）里的 CMakeLists.txt，在当前目录（build 目录）下生成构建系统文件
+
 # 1. 构建所有目标（默认）:
 #    cmake --build .
 #
